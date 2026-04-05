@@ -9,9 +9,9 @@ async function bootstrap() {
   app.enable('trust proxy');
   app.enableShutdownHooks();
 
-  const origins = (process.env.CORS_ORIGIN?.split(',') || ['http://localhost:4200']).map((s) =>
-    s.trim().replace(/\/$/, ''),
-  );
+  const origins = (process.env.CORS_ORIGIN?.split(',') || [
+    'http://localhost:4200',
+  ]).map((s) => s.trim().replace(/\/$/, ''));
   console.log('--- RESTARTING BACKEND ---');
   console.log('Allowed CORS Origins:', origins);
 
@@ -33,4 +33,4 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   console.log(`Backend is listening on port ${port}`);
 }
-bootstrap();
+bootstrap().catch((err) => console.error(err));
