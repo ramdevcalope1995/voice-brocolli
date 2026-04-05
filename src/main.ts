@@ -8,13 +8,29 @@ async function bootstrap() {
   });
   app.enable('trust proxy');
   app.enableShutdownHooks();
+
+  const origins = (process.env.CORS_ORIGIN?.split(',') || ['http://localhost:4200']).map((s) =>
+    s.trim().replace(/\/$/, ''),
+  );
+  console.log('--- RESTARTING BACKEND ---');
+  console.log('Allowed CORS Origins:', origins);
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN?.split(',').map((s) => s.trim()) ?? [
-      'http://localhost:4200',
-    ],
+    origin: origins,
     methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'upstash-signature'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+      'upstash-signature',
+    ],
+    credentials: true,
   });
-  await app.listen(Number(process.env.PORT ?? 8080), '0.0.0.0');
+
+  const port = Number(process.env.PORT ?? 8080);
+  await app.listen(port, '0.0.0.0');
+  console.log(`Backend is listening on port ${port}`);
 }
 bootstrap();
