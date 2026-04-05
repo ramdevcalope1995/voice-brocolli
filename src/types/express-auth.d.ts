@@ -1,8 +1,12 @@
 import type { AuthUser } from '../auth/auth.types';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    authUser?: AuthUser;
-    authSessionToken?: string;
+declare global {
+  namespace Express {
+    interface Request {
+      authUser?: AuthUser;
+      authSessionToken?: string;
+    }
   }
 }
+
+export {};
