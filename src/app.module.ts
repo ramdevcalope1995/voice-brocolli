@@ -6,10 +6,11 @@ import { SalesDemoModule } from './sales-demo/sales-demo.module';
 import { MongoInfraModule } from './infra/mongo/mongo.module';
 import { RedisInfraModule } from './infra/redis/redis.module';
 import { VectorInfraModule } from './infra/vector/vector.module';
-import { ClerkInfraModule } from './infra/clerk/clerk.module';
 import { QstashInfraModule } from './infra/qstash/qstash.module';
 import { InfraHealthModule } from './infra/health/infra-health.module';
 import { AiMemoryModule } from './ai-memory/ai-memory.module';
+import { AuthModule } from './auth/auth.module';
+import { NotebooksModule } from './notebooks/notebooks.module';
 
 @Module({
   imports: [
@@ -17,11 +18,12 @@ import { AiMemoryModule } from './ai-memory/ai-memory.module';
     MongoInfraModule,
     RedisInfraModule,
     VectorInfraModule,
-    ClerkInfraModule,
+    AuthModule,
     QstashInfraModule,
     InfraHealthModule,
     AiMemoryModule,
     SalesDemoModule,
+    NotebooksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

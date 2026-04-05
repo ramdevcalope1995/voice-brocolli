@@ -15,7 +15,8 @@ Backend API for 3D Gen application with AI memory, sales demo, and real-time com
   - `POST /sales-demo/session` - Create demo sessions
 - **Health Check** - Infrastructure monitoring at `/health`
 - **QStash Webhooks** - Async job and cron handling
-- **Authentication** - Clerk-based authentication with fallback support
+- **Authentication** - MongoDB-backed email/password auth with bcrypt and session tokens
+- **Notebook Chat** - NotebookLM-style notebook creation and Gemini-backed chat
 
 ## Tech Stack
 
@@ -24,7 +25,8 @@ Backend API for 3D Gen application with AI memory, sales demo, and real-time com
 - Upstash Redis & Vector
 - Stream.io SDK
 - QStash for async jobs
-- Clerk for authentication
+- bcryptjs for password hashing
+- Vercel AI SDK for Gemini notebook chat
 
 ## Project setup
 
@@ -45,6 +47,23 @@ $ pnpm run start:dev
 $ pnpm run start:prod
 ```
 
+## Cloud Run deploy
+
+1. Build and push the container image.
+2. Deploy it to Cloud Run with `PORT=8080`.
+3. Set `MONGODB_URI`, `CORS_ORIGIN`, and `AI_GATEWAY_API_KEY` as Cloud Run env vars or secrets.
+
+Example:
+
+```bash
+gcloud run deploy notebook-backend \
+  --image=REGION-docker.pkg.dev/PROJECT_ID/REPO/backend:latest \
+  --region=REGION \
+  --port=8080 \
+  --allow-unauthenticated \
+  --set-env-vars=MONGODB_URI=...,CORS_ORIGIN=https://your-frontend-url,AI_GATEWAY_API_KEY=...
+```
+
 ## Run tests
 
 ```bash
@@ -61,15 +80,17 @@ $ pnpm run test:cov
 ## Environment Variables
 
 ```
-CLERK_AUTH_ENABLED=true|false
+MONGODB_URI=
+CORS_ORIGIN=
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 UPSTASH_VECTOR_REST_URL=
 UPSTASH_VECTOR_REST_TOKEN=
-MONGODB_URI=
 STREAM_API_KEY=
 STREAM_API_SECRET=
 QSTASH_TOKEN=
+AI_GATEWAY_API_KEY=
+AI_GATEWAY_MODEL=google/gemini-2.0-flash
 ```
 
 ## License

@@ -21,6 +21,8 @@ import sys
 
 from getstream.stream import AsyncStream
 from getstream.video import rtc
+from getstream.video.rtc.pb.stream.video.sfu.models.models_pb2 import TrackType
+from getstream.video.rtc.tracks import SubscriptionConfig, TrackSubscriptionConfig
 from getstream.video.rtc import audio_track
 
 from wubble_bridge import WubbleAudioBridge, play_placeholder_tone
@@ -48,6 +50,10 @@ async def run() -> None:
     bot_user_id = _env("BOT_USER_ID")
 
     placeholder = os.environ.get("PLACEHOLDER_TONE", "true").lower() == "true"
+    # The Stream SDK default subscription config is empty, so opt into audio.
+    subscription_config = SubscriptionConfig(
+        default=TrackSubscriptionConfig(track_types=[TrackType.TRACK_TYPE_AUDIO])
+    )
 
     client = AsyncStream(api_key=api_key, api_secret=api_secret)
     bridge = WubbleAudioBridge.from_env()
@@ -57,7 +63,12 @@ async def run() -> None:
 
     try:
         call = client.video.call(call_type, call_id)
-        cm = await rtc.join(call, user_id=bot_user_id, create=False)
+        cm = await rtc.join(
+            call,
+            user_id=bot_user_id,
+            create=False,
+            subscription_config=subscription_config,
+        )
         async with cm as conn:
             await conn.add_tracks(audio=output)
             logger.info("Bot joined call %s:%s as %s", call_type, call_id, bot_user_id)

@@ -5,24 +5,17 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
-import { verifyToken } from '@clerk/backend';
+import { AuthService } from './auth.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
 @Injectable()
-export class ClerkAuthGuard implements CanActivate {
+export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly config: ConfigService,
+    private readonly auth: AuthService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const enabled =
-      this.config.get<string>('CLERK_AUTH_ENABLED', 'false') === 'true';
-    if (!enabled) {
-      return true;
-    }
-
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -31,14 +24,10 @@ export class ClerkAuthGuard implements CanActivate {
       return true;
     }
 
-    const secret = this.config.get<string>('CLERK_SECRET_KEY');
-    if (!secret) {
-      throw new UnauthorizedException('CLERK_SECRET_KEY is not configured');
-    }
-
     const req = context.switchToHttp().getRequest<{
       headers: { authorization?: string };
-      clerkUserId?: string;
+      authSessionToken?: string;
+      authUser?: { id: string; email: string; displayName: string };
     }>();
 
     const header = req.headers.authorization;
@@ -47,14 +36,17 @@ export class ClerkAuthGuard implements CanActivate {
     }
 
     const token = header.slice('Bearer '.length).trim();
-    const payload = await verifyToken(token, { secretKey: secret }).catch(
-      () => null,
-    );
-    if (!payload?.sub) {
-      throw new UnauthorizedException('Invalid Clerk session token');
+    if (!token) {
+      throw new UnauthorizedException('Missing Bearer token');
     }
-    req.clerkUserId = payload.sub;
 
+    const user = await this.auth.resolveSession(token);
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired session');
+    }
+
+    req.authSessionToken = token;
+    req.authUser = user;
     return true;
   }
 }

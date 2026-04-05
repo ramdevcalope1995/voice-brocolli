@@ -9,7 +9,7 @@ import type { RawBodyRequest } from '@nestjs/common/interfaces';
 import type { Request } from 'express';
 import { Receiver } from '@upstash/qstash';
 import { ConfigService } from '@nestjs/config';
-import { Public } from '../clerk/public.decorator';
+import { Public } from '../../auth/public.decorator';
 
 /**
  * QStash delivers signed POST requests here. Point your workflow destination URL

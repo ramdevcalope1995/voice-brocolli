@@ -1,11 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { RedisService } from '../redis/redis.service';
 import { VectorService } from '../vector/vector.service';
 import { QstashPublisherService } from '../qstash/qstash-publisher.service';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
-import { Public } from '../clerk/public.decorator';
+import { Public } from '../../auth/public.decorator';
 
 @Controller('health')
 export class InfraHealthController {
@@ -14,7 +13,6 @@ export class InfraHealthController {
     private readonly redis: RedisService,
     private readonly vector: VectorService,
     private readonly qstash: QstashPublisherService,
-    private readonly config: ConfigService,
   ) {}
 
   @Public()
@@ -52,8 +50,8 @@ export class InfraHealthController {
       redis: redisPing,
       vector: vectorPing,
       qstash: this.qstash.enabled() ? 'configured' : 'skipped',
-      clerk: this.config.get<string>('CLERK_SECRET_KEY') ? 'secret_present' : 'skipped',
-      clerkAuthEnabled: this.config.get<string>('CLERK_AUTH_ENABLED') === 'true',
+      auth: mongoOk ? 'configured' : 'skipped',
+      authEnabled: mongoOk,
     };
   }
 }

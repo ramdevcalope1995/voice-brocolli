@@ -80,11 +80,11 @@ export class StreamService {
       },
     });
 
-    const validity = this.config.get<number>('STREAM_TOKEN_VALIDITY_SECONDS') ?? 3600;
+    const validitySeconds = 3600; // 1 hour default
     const token = client.generateCallToken({
       user_id: humanId,
       call_cids: [callCid],
-      validity_in_seconds: validity,
+      validity_in_seconds: validitySeconds,
     });
 
     return {

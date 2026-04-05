@@ -1,7 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { SalesDemoService } from './sales-demo.service';
 import type { CreateSessionDto } from './dto/create-session.dto';
-import { Public } from '../infra/clerk/public.decorator';
+import { Public } from '../auth/public.decorator';
 
 @Controller('sales-demo')
 export class SalesDemoController {
