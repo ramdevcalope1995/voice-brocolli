@@ -1,8 +1,21 @@
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import mongoose from 'mongoose';
 
 const logger = new Logger('MongoInfraModule');
+
+// Attach connection-level error/event listeners once so a failed Atlas
+// connection does NOT produce an unhandled rejection that kills the process.
+mongoose.connection.on('error', (err: Error) => {
+  logger.error(`MongoDB connection error: ${err.message}`);
+});
+mongoose.connection.on('disconnected', () => {
+  logger.warn('MongoDB disconnected');
+});
+mongoose.connection.on('connected', () => {
+  logger.log('MongoDB connected ✓');
+});
 
 @Module({
   imports: [
@@ -20,34 +33,16 @@ const logger = new Logger('MongoInfraModule');
         }
         return {
           uri: uri ?? 'mongodb://127.0.0.1:27017/__unset__',
-          // Do NOT block the NestJS bootstrap on the initial TCP handshake.
+          // Do NOT block NestJS bootstrap on the initial TCP handshake.
           // The app will start and listen on PORT even if Atlas is slow.
           bufferCommands: false,
-          // How long the driver waits for a primary before giving up a single operation.
           serverSelectionTimeoutMS: 8_000,
-          // How long to wait for the TCP connection to be established.
           connectTimeoutMS: 10_000,
-          // Prevent Mongoose from throwing an unhandled error that crashes the process
-          // when the connection is dropped or never established.
           autoCreate: false,
           autoIndex: false,
         };
       },
       inject: [ConfigService],
-      // connectionFactory lets us attach an error listener so a failed Atlas
-      // connection does NOT produce an unhandled-rejection that kills the process.
-      connectionFactory(connection) {
-        connection.on('error', (err: Error) => {
-          logger.error(`MongoDB connection error: ${err.message}`);
-        });
-        connection.on('disconnected', () => {
-          logger.warn('MongoDB disconnected');
-        });
-        connection.on('connected', () => {
-          logger.log('MongoDB connected ✓');
-        });
-        return connection;
-      },
     }),
   ],
 })
