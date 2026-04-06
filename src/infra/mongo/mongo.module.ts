@@ -12,22 +12,42 @@ const logger = new Logger('MongoInfraModule');
         const uri = config.get<string>('MONGODB_URI');
         if (!uri) {
           logger.error(
-            'MONGODB_URI is not set. MongoDB will not be connected. ' +
-            'Set this environment variable in Cloud Run (or .env locally).',
+            'MONGODB_URI is not set — database features will be unavailable. ' +
+            'Set this env var in Cloud Run or .env locally.',
           );
-          // Return a dummy URI so Mongoose registers but won't block startup.
-          // Any DB operation will fail at the call site, not at boot time.
-          return {
-            uri: 'mongodb://localhost:27017/__unset__',
-            serverSelectionTimeoutMS: 1_000,
-          };
+        } else {
+          logger.log('MongoDB URI found — connecting...');
         }
         return {
-          uri,
-          serverSelectionTimeoutMS: 5_000,
+          uri: uri ?? 'mongodb://127.0.0.1:27017/__unset__',
+          // Do NOT block the NestJS bootstrap on the initial TCP handshake.
+          // The app will start and listen on PORT even if Atlas is slow.
+          bufferCommands: false,
+          // How long the driver waits for a primary before giving up a single operation.
+          serverSelectionTimeoutMS: 8_000,
+          // How long to wait for the TCP connection to be established.
+          connectTimeoutMS: 10_000,
+          // Prevent Mongoose from throwing an unhandled error that crashes the process
+          // when the connection is dropped or never established.
+          autoCreate: false,
+          autoIndex: false,
         };
       },
       inject: [ConfigService],
+      // connectionFactory lets us attach an error listener so a failed Atlas
+      // connection does NOT produce an unhandled-rejection that kills the process.
+      connectionFactory(connection) {
+        connection.on('error', (err: Error) => {
+          logger.error(`MongoDB connection error: ${err.message}`);
+        });
+        connection.on('disconnected', () => {
+          logger.warn('MongoDB disconnected');
+        });
+        connection.on('connected', () => {
+          logger.log('MongoDB connected ✓');
+        });
+        return connection;
+      },
     }),
   ],
 })
